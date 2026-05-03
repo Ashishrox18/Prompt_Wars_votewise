@@ -1,55 +1,30 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { MapPin, Search, Navigation, Clock, Phone, AlertCircle, Accessibility } from 'lucide-react';
+import { mapsService, PollingStation } from '../services/maps';
 
 const FindPolling: React.FC = () => {
+  const shouldReduceMotion = useReducedMotion();
   const [address, setAddress] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [stations, setStations] = useState<PollingStation[]>([]);
 
-  const mockStations = [
-    {
-      id: 1,
-      name: "Central Public Library",
-      address: "123 Main St, Anytown, CA 12345",
-      distance: "0.4 miles away",
-      hours: "7:00 AM - 8:00 PM",
-      accessibility: ["Wheelchair Accessible", "Braille Ballots Available", "Curbside Voting"],
-      isPrimary: true,
-      wait: "5 mins"
-    },
-    {
-      id: 2,
-      name: "Lincoln High School Gymnasium",
-      address: "456 Oak Ave, Anytown, CA 12345",
-      distance: "1.2 miles away",
-      hours: "7:00 AM - 8:00 PM",
-      accessibility: ["Wheelchair Accessible", "Language Interpreters (ES, ZH)"],
-      isPrimary: false,
-      wait: "15 mins"
-    },
-    {
-      id: 3,
-      name: "Community Center Hall B",
-      address: "789 Pine Ln, Anytown, CA 12345",
-      distance: "2.1 miles away",
-      hours: "7:00 AM - 8:00 PM",
-      accessibility: ["Ramp Access Only"],
-      isPrimary: false,
-      wait: "No wait"
-    }
-  ];
-
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (address.trim()) {
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
+      try {
+        const results = await mapsService.findNearestPollingStations(address);
+        setStations(results);
         setHasSearched(true);
-      }, 1000);
+      } catch (error) {
+        console.error("Error finding stations:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -63,18 +38,20 @@ const FindPolling: React.FC = () => {
               <MapPin className="w-6 h-6 text-[var(--accent)]" />
             </div>
             <div>
-              <h2 className="font-display font-bold text-xl leading-tight">Polling Locator</h2>
+              <h2 className="font-display font-bold text-xl leading-tight" id="locator-title">Polling Locator</h2>
               <p className="text-xs text-gray-500 font-mono">Powered by Google Maps API</p>
             </div>
           </div>
           
           <form onSubmit={handleSearch} className="relative w-full">
             <input
+              id="polling-address"
               type="text"
               placeholder="Enter your registered home address (e.g. 123 Main St, Anytown)..."
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl py-3.5 pl-12 pr-32 focus:outline-none focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-blue-50 transition-all text-base"
+              aria-label="Address to find polling station"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Button 
@@ -105,12 +82,12 @@ const FindPolling: React.FC = () => {
               </div>
               
               <div className="p-6 space-y-6 flex-1">
-                {mockStations.map((station, i) => (
+                {stations.map((station, i) => (
                   <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    key={station.id}
+                    key={station.id || i}
                   >
                     <Card className={`overflow-hidden transition-all duration-300 hover:shadow-lg ${station.isPrimary ? 'border-[var(--primary)] border-2 ring-4 ring-blue-50' : 'border border-gray-200 hover:border-blue-300'}`}>
                       {station.isPrimary && (
@@ -176,7 +153,7 @@ const FindPolling: React.FC = () => {
           <div className="absolute inset-0 flex items-center justify-center z-10 p-6">
             {hasSearched ? (
               <motion.div 
-                initial={{ scale: 0.5, opacity: 0 }}
+                initial={shouldReduceMotion ? { scale: 1, opacity: 1 } : { scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.5, type: "spring" }}
                 className="relative"
@@ -188,7 +165,7 @@ const FindPolling: React.FC = () => {
               </motion.div>
             ) : (
               <motion.div 
-                initial={{ y: 20, opacity: 0 }}
+                initial={shouldReduceMotion ? { opacity: 1 } : { y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 className="text-center bg-white/90 p-10 rounded-3xl shadow-2xl backdrop-blur-md max-w-md border border-white"
               >
