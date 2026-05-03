@@ -1,16 +1,30 @@
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Vote, Menu, X, LogOut, ChevronDown, Sparkles } from 'lucide-react';
-import Home from './pages/Home';
-import Chat from './pages/Chat';
-import Timeline from './pages/Timeline';
-import MyJourney from './pages/MyJourney';
-import FindPolling from './pages/FindPolling';
-import EligibilityCheck from './pages/EligibilityCheck';
-import BallotExplainer from './pages/BallotExplainer';
-import Glossary from './pages/Glossary';
+import { Vote, Menu, X, LogOut, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+
+// Lazy load pages for efficiency
+const Home = lazy(() => import('./pages/Home'));
+const Chat = lazy(() => import('./pages/Chat'));
+const Timeline = lazy(() => import('./pages/Timeline'));
+const MyJourney = lazy(() => import('./pages/MyJourney'));
+const FindPolling = lazy(() => import('./pages/FindPolling'));
+const EligibilityCheck = lazy(() => import('./pages/EligibilityCheck'));
+const BallotExplainer = lazy(() => import('./pages/BallotExplainer'));
+const Glossary = lazy(() => import('./pages/Glossary'));
+
 import { LoginModal } from './components/ui/LoginModal';
 import { useAuthStore } from './store/authStore';
+
+const LoadingFallback = () => (
+  <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div className="flex flex-col items-center gap-4">
+      <div className="bg-primary/10 p-4 rounded-3xl animate-pulse">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Optimizing Experience...</p>
+    </div>
+  </div>
+);
 
 const NavLink = ({ to, children, onClick }: { to: string, children: React.ReactNode, onClick?: () => void }) => {
   const location = useLocation();
@@ -145,16 +159,18 @@ function AppContent() {
       )}
       
       <main className="flex-1 relative">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/timeline" element={<Timeline />} />
-          <Route path="/my-journey" element={<MyJourney />} />
-          <Route path="/find-polling" element={<FindPolling />} />
-          <Route path="/eligibility-check" element={<EligibilityCheck />} />
-          <Route path="/ballot-explainer" element={<BallotExplainer />} />
-          <Route path="/glossary" element={<Glossary />} />
-        </Routes>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/timeline" element={<Timeline />} />
+            <Route path="/my-journey" element={<MyJourney />} />
+            <Route path="/find-polling" element={<FindPolling />} />
+            <Route path="/eligibility-check" element={<EligibilityCheck />} />
+            <Route path="/ballot-explainer" element={<BallotExplainer />} />
+            <Route path="/glossary" element={<Glossary />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
