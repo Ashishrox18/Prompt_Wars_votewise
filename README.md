@@ -97,5 +97,4 @@ The Chat system uses a **System Instruction layer** that constrains the LLM to:
 4.  Run development server: `npm run dev`
 5.  Build for production: `npm run build`
 
----
-**Created by [Your Name/Team] for the [Contest Name]**
+
